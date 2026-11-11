@@ -1,0 +1,9 @@
+go 1.25.0
+
+use (
+	./api-gateway
+	./proto-schemas
+	./services/inventory
+	./services/order
+	./services/user
+)

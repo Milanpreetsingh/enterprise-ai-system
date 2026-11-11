@@ -1,0 +1,50 @@
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python & Virtual Environments
+**/venv/
+**/.venv/
+**/env/
+**/ENV/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+
+# Go compiled binaries
+/api-gateway/api-gateway
+services/*/server
+!services/*/cmd/server/
+!services/*/cmd/server/**
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Environment variables & secrets
+*.env
+*.env.local
+*.env.*.local
+*.pem
+*.key
+
+# IDE & Editor files
+.idea/
+*.sublime-workspace
+*.sublime-project
+# Keeping .vscode/settings.json is usually optional, but ignore local workspace state:
+.vscode/*
+!.vscode/settings.json
+

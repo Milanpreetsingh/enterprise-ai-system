@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package order;
+
+// This ensures our Go order package is generated with this exact import path
+option go_package = "enterprise-ai-system/proto-schemas/orderpb";
+
+// OrderService handles the core business logic around the e-commerce order lifecycle.
+service OrderService {
+  // CreateOrder is called when a user checks out and places a new order.
+  rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
+  
+  // GetOrder fetches the current status and details of a specific order.
+  rpc GetOrder(GetOrderRequest) returns (OrderResponse);
+
+  // CancelOrder cancels an existing order and sets its status to CANCELLED.
+  rpc CancelOrder(CancelOrderRequest) returns (OrderResponse);
+}
+
+// -----------------------------------------------------------------------------
+// Message Definitions
+// -----------------------------------------------------------------------------
+
+// CreateOrderRequest represents the payload the Gateway sends to the Order Service.
+message CreateOrderRequest {
+  string user_id = 1; // Passed down from the Gateway's JWT validation!
+  string product_id = 2;
+  int32 quantity = 3;
+}
+
+// GetOrderRequest is used to lookup an order.
+message GetOrderRequest {
+  string id = 1;
+}
+
+// CancelOrderRequest is used to cancel an order.
+message CancelOrderRequest {
+  string id = 1;
+  string reason = 2;
+}
+
+// OrderResponse represents the state of the order in our database.
+message OrderResponse {
+  string id = 1;
+  string user_id = 2;
+  string product_id = 3;
+  int32 quantity = 4;
+  
+  // We use a string for status (e.g., "PENDING", "SHIPPED", "DELIVERED"). 
+  // In a more complex system, this could be an Enum for strict type safety.
+  string status = 5; 
+  string created_at = 6;
+}

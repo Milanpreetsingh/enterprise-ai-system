@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package ai;
+
+// The go_package specifies the import pathway for compiled Go code
+option go_package = "enterprise-ai-system/proto-schemas/aipb";
+
+// AIService handles real-time agent token streaming over gRPC.
+service AIService {
+  // StreamChat streams response tokens in real-time using gRPC Server Streaming.
+  rpc StreamChat(ChatStreamRequest) returns (stream ChatStreamResponse);
+}
+
+// ChatStreamRequest represents the client query payload for streaming.
+message ChatStreamRequest {
+  string message = 1;
+  string thread_id = 2;
+  string user_id = 3;
+}
+
+// ChatStreamResponse represents each token chunk streamed back from the AI graph.
+message ChatStreamResponse {
+  string token = 1;
+  bool is_final = 2;
+}

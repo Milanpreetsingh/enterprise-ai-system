@@ -1,0 +1,24 @@
+{
+  "go.useLanguageServer": true,
+  "go.goroot": "/usr/local/go",
+  "go.alternateTools": {
+    "go": "/usr/local/go/bin/go",
+    "gopls": "/Users/milanpreetsingh/go/bin/gopls"
+  },
+  "go.toolsEnvVars": {
+    "GOTOOLCHAIN": "local"
+  },
+  "gopls": {
+    "ui.semanticTokens": true,
+    "ui.navigation.importShortcut": "Definition"
+  },
+  "python.defaultInterpreterPath": "${workspaceFolder}/services/ai/venv/bin/python",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/services/ai",
+    "${workspaceFolder}/services/notification"
+  ],
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/services/ai",
+    "${workspaceFolder}/services/notification"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "include": [
+    "services/ai",
+    "services/notification"
+  ],
+  "extraPaths": [
+    "services/ai",
+    "services/notification"
+  ],
+  "venvPath": "services/ai",
+  "venv": "venv"
+}

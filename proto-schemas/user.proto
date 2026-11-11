@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+// We define a unique package name to avoid message collisions.
+package user;
+
+// The go_package option is essential. It tells the protoc compiler 
+// where to place the generated Go files and what to name the Go package.
+option go_package = "enterprise-ai-system/proto-schemas/userpb";
+
+// UserService handles all user-related operations like authentication and profile management.
+service UserService {
+  // CreateUser registers a new user in the system.
+  rpc CreateUser(CreateUserRequest) returns (UserResponse);
+  
+  // GetUser fetches a user's details by their ID.
+  rpc GetUser(GetUserRequest) returns (UserResponse);
+  
+  // LoginUser verifies credentials and returns JWT tokens.
+  rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
+  
+  // RefreshToken issues a new access token using a valid refresh token.
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+}
+
+// -----------------------------------------------------------------------------
+// Message Definitions
+// -----------------------------------------------------------------------------
+
+// CreateUserRequest contains the necessary fields to register a new user.
+message CreateUserRequest {
+  string email = 1;
+  string password = 2; // In the Go service handler, we will strictly hash this before DB insert!
+  string full_name = 3;
+  string role = 4;     // Role: 'customer', 'support_agent', or 'admin'
+}
+
+// GetUserRequest is used to lookup a specific user by their unique identifier.
+message GetUserRequest {
+  string id = 1;
+}
+
+// UserResponse is the standard representation of a user returned by the service.
+message UserResponse {
+  string id = 1;
+  string email = 2;
+  string full_name = 3;
+  string role = 4;
+  // Notice: We explicitly omit the password hash here so it never leaks over the network.
+}
+
+// LoginUserRequest contains the credentials to authenticate.
+message LoginUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// LoginUserResponse returns the user details alongside the JWT tokens.
+message LoginUserResponse {
+  UserResponse user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+}
+
+// RefreshTokenRequest is used to get a new access token.
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+// RefreshTokenResponse contains the new access token.
+message RefreshTokenResponse {
+  string access_token = 1;
+}
