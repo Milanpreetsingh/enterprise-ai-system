@@ -1,16 +1,20 @@
 import contextvars
+import os
 import requests
 from pydantic import create_model, Field
 from langchain_core.tools import StructuredTool
+from app.agent.constants import DEFAULT_MCP_URL
 
 # ContextVar storing the active authenticated user ID for the request turn
 current_user_id: contextvars.ContextVar[str] = contextvars.ContextVar("current_user_id", default="anonymous")
 
-def fetch_mcp_tools(mcp_url: str = "http://localhost:8080/api/v1/mcp") -> list[StructuredTool]:
+def fetch_mcp_tools(mcp_url: str = None) -> list[StructuredTool]:
     """
     Connects to the API Gateway MCP Server, fetches available capabilities 
     dynamically, and translates them into LangChain StructuredTool objects.
     """
+    if not mcp_url:
+        mcp_url = DEFAULT_MCP_URL
     payload = {
         "jsonrpc": "2.0",
         "method": "tools/list",

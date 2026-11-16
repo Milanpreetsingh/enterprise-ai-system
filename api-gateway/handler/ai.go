@@ -117,7 +117,9 @@ func (h *GatewayHandler) Approve(c *gin.Context) {
 
 // SeedKnowledgeRequest defines payload to insert into vector store.
 type SeedKnowledgeRequest struct {
+	Title    string                 `json:"title"`
 	Content  string                 `json:"content" binding:"required"`
+	Category string                 `json:"category"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 

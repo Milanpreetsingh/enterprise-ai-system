@@ -187,17 +187,21 @@ async function loadKnowledgeDocs() {
     docs.forEach(doc => {
       const item = document.createElement('div');
       item.className = 'doc-item';
-      const cat = (doc.metadata && doc.metadata.category) ? doc.metadata.category : 'policy';
+      const cat = (doc.metadata && doc.metadata.category) ? doc.metadata.category : (doc.category || 'policy');
       const shortId = doc.id ? doc.id.substring(0, 8) + '...' : '';
+      const title = doc.title || 'Support Policy';
+      const chunkCount = doc.chunk_count || (doc.metadata && doc.metadata.chunk_count) || 1;
 
       item.innerHTML = `
         <div class="doc-item-meta">
           <span class="doc-badge ${cat}">${cat}</span>
+          <span class="doc-badge" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.4);">${chunkCount} Chunks (Hybrid)</span>
           <span class="doc-uuid" title="${doc.id}">ID: ${shortId}</span>
         </div>
+        <h4 style="margin: 8px 0 4px 0; color: #f8fafc; font-size: 0.95rem;">${escapeHTML(title)}</h4>
         <p class="doc-content">${escapeHTML(doc.content)}</p>
         <div class="doc-actions">
-          <button class="btn-chip ask-btn" data-query="According to our knowledge base, what is the policy regarding: ${escapeHTML(doc.content.substring(0, 60))}?">
+          <button class="btn-chip ask-btn" data-query="According to our knowledge base, what is the policy regarding: ${escapeHTML(title)}?">
             Ask in Chat 💬
           </button>
         </div>
@@ -678,6 +682,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (seedRagForm) {
     seedRagForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const titleInput = document.getElementById('ragTitle');
+      const title = titleInput ? titleInput.value.trim() : '';
       const content = document.getElementById('ragContent').value.trim();
       const category = document.getElementById('ragCategory').value;
       const tag = document.getElementById('ragTag').value.trim();
@@ -686,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!content) return;
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Generating Embeddings & Storing...';
+      submitBtn.textContent = 'Chunking & Indexing Embeddings...';
 
       try {
         const headers = { 'Content-Type': 'application/json' };
@@ -697,10 +703,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const metadata = { category };
         if (tag) metadata.tag = tag;
 
+        const bodyPayload = { content, category, metadata };
+        if (title) bodyPayload.title = title;
+
         const res = await fetch(`${GATEWAY_URL}/rag/seed`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ content, metadata })
+          body: JSON.stringify(bodyPayload)
         });
 
         const data = await res.json();
@@ -709,6 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
           seedRagResult.textContent = JSON.stringify(data, null, 2);
         }
 
+        if (titleInput) titleInput.value = '';
         document.getElementById('ragContent').value = '';
         document.getElementById('ragTag').value = '';
 
@@ -755,14 +765,19 @@ document.addEventListener('DOMContentLoaded', () => {
         data.results.forEach((item) => {
           const card = document.createElement('div');
           card.className = 'vector-match-card';
-          const cat = (item.metadata && item.metadata.category) ? item.metadata.category : 'doc';
-          const distance = typeof item.distance === 'number' ? item.distance.toFixed(4) : 'N/A';
+          const cat = (item.metadata && item.metadata.category) ? item.metadata.category : 'policy';
+          const title = item.title || 'Policy Document';
+          const score = typeof item.rerank_score === 'number'
+            ? `Cross-Encoder: ${item.rerank_score.toFixed(3)}`
+            : (typeof item.distance === 'number' ? `Distance: ${item.distance.toFixed(4)}` : 'Matched');
 
           card.innerHTML = `
             <div class="vector-match-header">
               <span class="doc-badge ${cat}">${cat}</span>
-              <span class="similarity-badge">Distance: ${distance}</span>
+              <span class="similarity-badge">${score}</span>
             </div>
+            <h4 style="margin: 6px 0 2px 0; color: #f8fafc; font-size: 0.9rem;">${escapeHTML(title)}</h4>
+            ${item.matched_snippet ? `<div style="font-size: 0.8rem; color: #38bdf8; margin-bottom: 4px;">🎯 Matched Chunk: <em>"${escapeHTML(item.matched_snippet)}"</em></div>` : ''}
             <p class="doc-content">${escapeHTML(item.content)}</p>
           `;
           queryRagResults.appendChild(card);

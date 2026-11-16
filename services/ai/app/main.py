@@ -1,9 +1,9 @@
+from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
 from app.db.connection import init_db
-from app.db.rag import seed_document
 from app.agent.graph import compiled_graph
 
 app = FastAPI(title="Enterprise AI Support Hub Service")
@@ -34,8 +34,10 @@ class InvalidateCacheRequest(BaseModel):
     thread_id: str = None
 
 class SeedRequest(BaseModel):
+    title: Optional[str] = None
     content: str
-    metadata: dict = None
+    category: Optional[str] = None
+    metadata: Optional[dict] = None
 
 @app.get("/health")
 def health():
@@ -163,15 +165,45 @@ async def chat(req: ChatRequest):
 @app.post("/api/v1/rag/seed")
 def seed(req: SeedRequest):
     """
-    Utility endpoint to populate vector database context for testing RAG.
+    Ingests a support document into the Hierarchical Hybrid RAG pipeline.
+    Stores the full parent document in parent_documents, and generates
+    semantically aligned child chunks in knowledge_base_chunks for dense vector + BM25 search.
     """
-    if not req.content:
+    if not req.content or not req.content.strip():
         raise HTTPException(status_code=400, detail="Content field is required")
     try:
-        doc_id = seed_document(req.content, req.metadata)
-        return {"status": "success", "id": doc_id}
+        from app.db.hybrid_search import seed_hierarchical_document
+
+        # Derive title: explicit -> metadata -> first sentence/line -> fallback
+        title = req.title or (req.metadata.get("title") if req.metadata else None)
+        if not title:
+            first_line = req.content.strip().split("\n")[0].strip()
+            first_line = first_line.rstrip(".:;")
+            title = first_line[:70] if len(first_line) > 70 else first_line
+            if not title:
+                title = "Company Support Policy"
+
+        # Derive category: explicit -> metadata -> fallback
+        category = req.category or (req.metadata.get("category") if req.metadata else None) or "policy"
+
+        parent_id = seed_hierarchical_document(
+            title=title,
+            full_content=req.content.strip(),
+            category=category,
+            metadata=req.metadata
+        )
+        return {
+            "status": "success",
+            "id": parent_id,
+            "parent_id": parent_id,
+            "title": title,
+            "category": category
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to seed document: {e}")
+        import traceback
+        tb = traceback.format_exc()
+        print(f"[SEED ERROR] {type(e).__name__}: {e}\n{tb}")
+        raise HTTPException(status_code=500, detail=f"Failed to seed hierarchical document: {e}")
 
 class RagQueryRequest(BaseModel):
     query: str
@@ -180,32 +212,61 @@ class RagQueryRequest(BaseModel):
 @app.post("/api/v1/rag/query")
 def query_rag_endpoint(req: RagQueryRequest):
     """
-    Directly query the RAG vector store to inspect semantic distance matches.
+    Directly query the Hierarchical Hybrid RAG pipeline to inspect dense+sparse RRF matches
+    and Cross-Encoder joint attention re-ranking scores.
     """
-    if not req.query:
+    if not req.query or not req.query.strip():
         raise HTTPException(status_code=400, detail="Query field is required")
-    from app.db.rag import query_rag
-    results = query_rag(req.query, limit=req.limit)
-    return {"query": req.query, "results": results}
+    from app.db.hybrid_search import query_hierarchical_rag
+    results = query_hierarchical_rag(req.query.strip(), top_parents=req.limit)
+    formatted = []
+    for r in results:
+        formatted.append({
+            "id": r["parent_id"],
+            "title": r.get("title", "Policy Document"),
+            "content": r.get("content", ""),
+            "matched_snippet": r.get("matched_snippet", ""),
+            "rerank_score": r.get("rerank_score", 0.0),
+            "rrf_score": r.get("rrf_score", 0.0),
+            "metadata": {
+                "title": r.get("title", ""),
+                "rank_dense": r.get("rank_dense", 999),
+                "rank_sparse": r.get("rank_sparse", 999),
+                "category": "policy"
+            }
+        })
+    return {"query": req.query, "results": formatted}
 
 @app.get("/api/v1/rag/docs")
 def list_knowledge_docs(limit: int = 50):
     """
-    Retrieves all knowledge base documents currently stored in PostgreSQL pgvector.
+    Retrieves all knowledge base documents currently stored in PostgreSQL parent_documents
+    along with their semantic child chunk counts from knowledge_base_chunks.
     """
     import json
     from app.db import connection
     with connection.pool.connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT id, content, metadata FROM knowledge_base LIMIT %s;", (limit,))
+            cur.execute("""
+                SELECT p.id, p.title, p.full_content, p.category, p.metadata,
+                       COUNT(c.id) AS chunk_count
+                FROM parent_documents p
+                LEFT JOIN knowledge_base_chunks c ON c.parent_id = p.id
+                GROUP BY p.id, p.title, p.full_content, p.category, p.metadata, p.created_at
+                ORDER BY p.created_at DESC
+                LIMIT %s;
+            """, (limit,))
             rows = cur.fetchall()
             results = []
             for r in rows:
-                meta = r[2] if isinstance(r[2], dict) else json.loads(r[2] or "{}")
+                meta = r[4] if isinstance(r[4], dict) else json.loads(r[4] or "{}")
                 results.append({
                     "id": str(r[0]),
-                    "content": r[1],
-                    "metadata": meta
+                    "title": r[1],
+                    "content": r[2],
+                    "category": r[3],
+                    "chunk_count": r[5],
+                    "metadata": {**meta, "category": r[3], "chunk_count": r[5]}
                 })
             return {"documents": results, "count": len(results)}
 

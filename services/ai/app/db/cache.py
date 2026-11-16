@@ -7,8 +7,18 @@ import redis
 from app.config import settings
 from app.db.rag import get_embedding
 
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+# Support both REDIS_ADDR ("host:port") and separate REDIS_HOST / REDIS_PORT.
+# Also safely handles Kubernetes default injected "tcp://ip:port" service environment variables.
+redis_addr = os.getenv("REDIS_ADDR")
+if redis_addr and ":" in redis_addr:
+    REDIS_HOST, port_str = redis_addr.split(":", 1)
+    REDIS_PORT = int(port_str)
+else:
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    raw_port = os.getenv("REDIS_PORT", "6379")
+    if raw_port.startswith("tcp://"):
+        raw_port = raw_port.split(":")[-1]
+    REDIS_PORT = int(raw_port)
 
 try:
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)

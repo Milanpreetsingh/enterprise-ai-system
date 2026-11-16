@@ -85,6 +85,11 @@ func main() {
 		c.Next()
 	})
 
+	// Kubernetes Healthz Probe (Bypasses rate limiting for zero-downtime rolling checks)
+	r.GET("/healthz", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "healthy"})
+	})
+
 	// Global Sliding-Window Rate Limiter (30 requests/minute per IP/User)
 	r.Use(middleware.RateLimiterMiddleware(rdb, 30))
 

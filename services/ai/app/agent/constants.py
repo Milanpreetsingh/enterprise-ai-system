@@ -19,5 +19,7 @@ POLICY_KEYWORDS = [
     "eligible",
 ]
 
+import os
+
 # MCP Server Defaults
-DEFAULT_MCP_URL = "http://localhost:8080/api/v1/mcp"
+DEFAULT_MCP_URL = os.getenv("MCP_SERVER_URL", "http://localhost:8080/api/v1/mcp")
