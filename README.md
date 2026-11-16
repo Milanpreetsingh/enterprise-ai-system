@@ -1,4 +1,4 @@
-# Enterprise Omnichannel AI Support Hub (SDE-3 Production Architecture)
+# Enterprise Omnichannel AI Support Hub
 
 [![Go Version](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go)](https://golang.org)
 [![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.13-3776AB?logo=python)](https://python.org)
@@ -65,7 +65,7 @@ graph TD
 
 ---
 
-## 🌟 Core Enterprise Capabilities & SDE-3 Patterns
+## 🌟 Core Architecture & Capabilities
 
 ### 1. Dynamic Multi-Intent Orchestrator & Synthesizer (Pattern 2)
 Handles compound inquiries (e.g. *"What is your return policy on opened electronics, and what is the status of order 2c78992d...?"*) using a 5-safeguard parallel orchestration architecture:
@@ -106,7 +106,7 @@ Handles compound inquiries (e.g. *"What is your return policy on opened electron
 | **[`proto-schemas`](file:///Users/milanpreetsingh/Desktop/enterprise-ai-system/proto-schemas)** | Protobuf definitions for User, Order, and AI streaming services. |
 | **[`k8s`](file:///Users/milanpreetsingh/Desktop/enterprise-ai-system/k8s)** | Kubernetes declarative manifests (Deployments, StatefulSets, Ingress, HPA autoscaler). |
 | **📖 [Testing Guide](file:///Users/milanpreetsingh/Desktop/enterprise-ai-system/docs/comprehensive_phase_wise_testing_guide.md)** | Step-by-step curl commands for every phase, gRPC call, and edge case. |
-| **📖 [Request Flow Guide](file:///Users/milanpreetsingh/Desktop/enterprise-ai-system/docs/revamped_chat_order_status_request_flow_guide.md)** | Code-level deep dive into all 7 operational scenarios and SDE-3 architecture patterns. |
+| **📖 [Request Flow Guide](file:///Users/milanpreetsingh/Desktop/enterprise-ai-system/docs/revamped_chat_order_status_request_flow_guide.md)** | Code-level deep dive into all 7 operational scenarios and distributed architecture patterns. |
 
 ---
 

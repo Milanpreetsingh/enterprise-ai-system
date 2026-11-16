@@ -1,4 +1,4 @@
-# Revamped Enterprise Request Execution Flow Guide (SDE-3 Production Architecture)
+# Revamped Enterprise Request Execution Flow Guide (Production Architecture)
 
 This document provides a comprehensive, code-level execution walkthrough of the updated, production-grade enterprise architecture. It contrasts the legacy implementation with the revamped system across all request lifecycle stages: **API Gateway Ingress (HTTP/SSE)**, **Dual-LLM Security Guardrails**, **Tiered Memory Subsystem & Multi-Turn State Checkpointing**, **Master Supervisor Router**, **Hierarchical Hybrid RAG (pgvector HNSW + BM25 tsvector + Cross-Encoder)**, **Model Context Protocol (MCP)**, **Two-Phase SAGA with Transactional Outbox**, and **Idempotent Kafka Consumer Groups**.
 
@@ -34,10 +34,10 @@ This document provides a comprehensive, code-level execution walkthrough of the 
   - [The Architectural Paradox: Why No RAG Tool Call or Specialist Re-Routing?](#scenario-6-paradox)
   - [Step-by-Step Code Flow (The 4 Pillars)](#scenario-6-flow)
   - [Hub-and-Spoke Topology vs. Agent-to-Agent Chaining](#scenario-6-topology)
-  - [How to Support Unstructured Policy Lookups in Order Flows (Two SDE-3 Patterns)](#scenario-6-patterns)
+  - [How to Support Unstructured Policy Lookups in Order Flows (Two Architectural Patterns)](#scenario-6-patterns)
 - [🚀 Scenario 7: Dynamic Multi-Intent Orchestrator & Synthesizer (Pattern 2 Live Implementation)](#scenario-7-multi-intent)
   - [1. Real Compound Query & Verified Output](#scenario-7-payload)
-  - [2. The 5 SDE-3 Safeguards in Action (State Reducer, Bulkhead, Parallel AsyncIO)](#scenario-7-safeguards)
+  - [2. The 5 Enterprise Safeguards in Action (State Reducer, Bulkhead, Parallel AsyncIO)](#scenario-7-safeguards)
   - [3. End-to-End Execution Trace](#scenario-7-trace)
 - [⚡ Summary Component Responsibility Matrix](#component-matrix)
 
@@ -46,7 +46,7 @@ This document provides a comprehensive, code-level execution walkthrough of the 
 <a id="architectural-evolution-overview"></a>
 ## 📌 Architectural Evolution Overview (Legacy vs. Revamped)
 
-| Architectural Dimension | Legacy Implementation (`v1`) | Revamped SDE-3 Enterprise Architecture |
+| Architectural Dimension | Legacy Implementation (`v1`) | Revamped Enterprise Architecture |
 | :--- | :--- | :--- |
 | **Client Ingress Protocol** | Synchronous HTTP POST to FastAPI `:8000/api/v1/chat` | HTTP/SSE Server-Sent Events via Go API Gateway `:8080/api/v1/chat/stream` |
 | **Inter-Service AI Transport** | Direct HTTP JSON request | HTTP/2 Multiplexed gRPC Server Streaming (`StreamChat` on `:50053`) |
@@ -853,7 +853,7 @@ CALL 2: "What is my preferred language?" (Same thread_id: "thread-ollama-1")
 <a id="scenario-5-purposes"></a>
 ### 3. Key Purposes of the `checkpoints` Table Beyond Basic Chat Memory
 
-In this SDE-3 enterprise architecture, the PostgreSQL `checkpoints` table serves three critical architectural capabilities beyond basic turn recall:
+In this production enterprise architecture, the PostgreSQL `checkpoints` table serves three critical architectural capabilities beyond basic turn recall:
 
 1. **Human-in-the-Loop (HITL) Interruption & Resumption**:
    - The StateGraph is compiled with:
@@ -1042,12 +1042,12 @@ In modern AI architecture, engineers often debate between two multi-agent topolo
 ---
 
 <a id="scenario-6-patterns"></a>
-### 5. How to Support Unstructured Policy Lookups in Order Flows (Two SDE-3 Patterns)
+### 5. How to Support Unstructured Policy Lookups in Order Flows (Two Architectural Patterns)
 
 What if a user asks a compound question that requires **unstructured policy knowledge not present in user memory**?
 * *Example:* *"This is my order 2c78992d..., I spilled liquid on the keyboard. Does your accidental damage policy cover spills on open-box refurbished items?"*
 
-Because refurbished item liquid spill policies are complex and not stored in customer memory, the system needs access to the knowledge base. In an SDE-3 architecture, there are two production patterns to achieve this:
+Because refurbished item liquid spill policies are complex and not stored in customer memory, the system needs access to the knowledge base. In modern distributed systems, there are two production patterns to achieve this:
 
 #### Pattern 1: Tool Sharing (Recommended for Speed & Simplicity)
 Simply bind the RAG `lookup_knowledge_base` tool to `order_specialist` in addition to its order tools:
@@ -1095,7 +1095,7 @@ This scenario documents the live implementation of **Pattern 2 (The Dynamic Orch
 ---
 
 <a id="scenario-7-safeguards"></a>
-### 2. The 5 SDE-3 Safeguards in Action
+### 2. The 5 Enterprise Safeguards in Action
 
 ```
                               [ Incoming Compound Query ]
