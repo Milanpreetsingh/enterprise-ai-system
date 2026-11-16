@@ -67,7 +67,7 @@ graph TD
 
 ## 🌟 Core Architecture & Capabilities
 
-### 1. Dynamic Multi-Intent Orchestrator & Synthesizer (Pattern 2)
+### 1. Dynamic Multi-Intent Orchestrator & Synthesizer
 Handles compound inquiries (e.g. *"What is your return policy on opened electronics, and what is the status of order 2c78992d...?"*) using a 5-safeguard parallel orchestration architecture:
 * **Conflict-Free Reducer:** Uses `Annotated[List[Dict], operator.add]` in `AgentState` so concurrent workers append without race conditions.
 * **Zero-Latency Single-Intent Tax:** Stage 0 fast heuristic detector bypasses the planner in `<0.05ms` for simple single-intent queries.
