@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+
+# Python artifacts
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/venv/
+services/ai/venv/
+
+# Go binaries and local builds
+api-gateway/api-gateway
+services/order/server
+services/inventory/server
+services/user/server
+**/bin/
+*.exe
+*.test
+*.out
+
+# Node / Frontend
+**/node_modules/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Environment and local configs
+.env
+services/*/.env
+api-gateway/.env
+
+# Local documentation & artifacts
+docs/
+

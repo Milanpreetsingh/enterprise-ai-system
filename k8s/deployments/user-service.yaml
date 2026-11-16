@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: enterprise-ai
+  labels:
+    app: user-service
+spec:
+  ports:
+    - port: 50051
+      name: grpc
+      targetPort: 50051
+  selector:
+    app: user-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: enterprise-ai
+  labels:
+    app: user-service
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: enterprise-user-service:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 50051
+              name: grpc
+          env:
+            - name: DB_DSN
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: DB_DSN
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: KAFKA_BROKERS
+            - name: KAFKA_USER_GROUP
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: KAFKA_USER_GROUP
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: enterprise-secrets
+                  key: JWT_SECRET
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 15
+            periodSeconds: 15
+

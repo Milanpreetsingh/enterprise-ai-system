@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: enterprise-ai
+  labels:
+    app: inventory-service
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: inventory-service
+  template:
+    metadata:
+      labels:
+        app: inventory-service
+    spec:
+      containers:
+        - name: inventory-service
+          image: enterprise-inventory-service:v1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_DSN
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: DB_DSN
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: KAFKA_BROKERS
+            - name: KAFKA_ORDER_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: KAFKA_ORDER_TOPIC
+            - name: KAFKA_CONSUMER_GROUP
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: KAFKA_CONSUMER_GROUP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+

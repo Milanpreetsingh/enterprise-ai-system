@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: enterprise-ai
+  labels:
+    app: notification-service
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: enterprise-notification-service:v1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DB_DSN
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: DB_DSN
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: KAFKA_BROKERS
+            - name: KAFKA_ORDER_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: KAFKA_ORDER_TOPIC
+            - name: KAFKA_DLQ_TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: KAFKA_DLQ_TOPIC
+            - name: KAFKA_CONSUMER_GROUP
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: KAFKA_NOTIFICATION_GROUP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+

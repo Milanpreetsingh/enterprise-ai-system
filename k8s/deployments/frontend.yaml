@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-app
+  namespace: enterprise-ai
+  labels:
+    app: frontend-app
+spec:
+  ports:
+    - port: 80
+      name: http
+      targetPort: 80
+  selector:
+    app: frontend-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-app
+  namespace: enterprise-ai
+  labels:
+    app: frontend-app
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: frontend-app
+  template:
+    metadata:
+      labels:
+        app: frontend-app
+    spec:
+      containers:
+        - name: frontend-app
+          image: enterprise-frontend:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+

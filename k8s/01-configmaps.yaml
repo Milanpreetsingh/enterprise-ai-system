@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: enterprise-config
+  namespace: enterprise-ai
+  labels:
+    app.kubernetes.io/part-of: enterprise-ai-system
+data:
+  # Internal CoreDNS Service Endpoints
+  POSTGRES_HOST: "postgres.enterprise-ai.svc.cluster.local"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "postgres"
+  DB_DSN: "host=postgres.enterprise-ai.svc.cluster.local user=postgres password=postgres dbname=postgres port=5432 sslmode=disable"
+  DATABASE_URL: "postgresql://postgres:postgres@postgres.enterprise-ai.svc.cluster.local:5432/postgres"
+
+  REDIS_ADDR: "redis.enterprise-ai.svc.cluster.local:6379"
+  MCP_SERVER_URL: "http://api-gateway.enterprise-ai.svc.cluster.local:8080/api/v1/mcp"
+
+  KAFKA_BROKERS: "kafka.enterprise-ai.svc.cluster.local:9092"
+  KAFKA_ORDER_TOPIC: "order-events"
+  KAFKA_DLQ_TOPIC: "order-dlq"
+  KAFKA_USER_GROUP: "user-service-group"
+  KAFKA_CONSUMER_GROUP: "inventory-service-group"
+  KAFKA_NOTIFICATION_GROUP: "notification-service-group"
+
+  USER_SERVICE_ADDR: "user-service.enterprise-ai.svc.cluster.local:50051"
+  ORDER_SERVICE_ADDR: "order-service.enterprise-ai.svc.cluster.local:50052"
+  AI_SERVICE_GRPC_ADDR: "ai-service.enterprise-ai.svc.cluster.local:50053"
+  AI_SERVICE_HTTP_ADDR: "http://ai-service.enterprise-ai.svc.cluster.local:8000"
+  AI_HTTP_URL: "http://ai-service.enterprise-ai.svc.cluster.local:8000"
+
+  # AI & Model Tuning
+  OLLAMA_BASE_URL: "http://host.minikube.internal:11434"
+  OLLAMA_MODEL: "llama3.1:8b"
+  OLLAMA_EMBED_MODEL: "nomic-embed-text"
+  GROQ_MODEL: "llama-3.1-8b-instant"
+  SEMANTIC_CACHE_THRESHOLD: "0.85"
+  RERANKER_MODEL: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+

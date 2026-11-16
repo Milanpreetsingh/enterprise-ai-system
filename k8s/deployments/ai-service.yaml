@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-service
+  namespace: enterprise-ai
+  labels:
+    app: ai-service
+spec:
+  ports:
+    - port: 50053
+      name: grpc
+      targetPort: 50053
+    - port: 8000
+      name: http
+      targetPort: 8000
+  selector:
+    app: ai-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-service
+  namespace: enterprise-ai
+  labels:
+    app: ai-service
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ai-service
+  template:
+    metadata:
+      labels:
+        app: ai-service
+    spec:
+      containers:
+        - name: ai-service
+          image: enterprise-ai-service:v2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 50053
+              name: grpc
+            - containerPort: 8000
+              name: http
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: DATABASE_URL
+            - name: REDIS_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: REDIS_ADDR
+            - name: MCP_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: MCP_SERVER_URL
+            - name: OLLAMA_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: OLLAMA_BASE_URL
+            - name: OLLAMA_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: OLLAMA_MODEL
+            - name: OLLAMA_EMBED_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: OLLAMA_EMBED_MODEL
+            - name: GROQ_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: GROQ_MODEL
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: enterprise-secrets
+                  key: GROQ_API_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: enterprise-secrets
+                  key: OPENAI_API_KEY
+            - name: SEMANTIC_CACHE_THRESHOLD
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: SEMANTIC_CACHE_THRESHOLD
+            - name: RERANKER_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: enterprise-config
+                  key: RERANKER_MODEL
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2.5Gi
+          # Startup probe protects against killing heavy ML model loading during cold starts
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
