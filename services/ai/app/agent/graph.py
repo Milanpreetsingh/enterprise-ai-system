@@ -528,6 +528,7 @@ async def synthesizer_node(state: AgentState):
     """
     Fan-In Aggregator: Combines findings from all parallel specialists
     into a single cohesive, unified, empathetic response for the customer.
+    Applies strict terminal boundaries and defensive truncation to prevent autoregressive spillover.
     """
     findings = state.get("findings", [])
     messages = state.get("messages", [])
@@ -542,21 +543,36 @@ async def synthesizer_node(state: AgentState):
 
     context_text = "\n\n".join(findings_blocks)
 
-    prompt = (
+    system_prompt = (
         "You are Maya, Senior Customer Support Specialist at Enterprise.\n"
-        f"Customer Inquired: \"{last_human_msg}\"\n\n"
-        f"Findings from our internal departments:\n"
-        f"{context_text}\n\n"
         "Instructions for Final Customer Response:\n"
         "1. Write a single, cohesive, warm, empathetic, and comprehensive response that directly answers ALL parts of the customer's request.\n"
         "2. NEVER mention internal agent names, 'specialists', 'findings', or backend departments. Speak naturally as one unified person.\n"
         "3. If order details are present, explain the status clearly.\n"
         "4. If policy details are present, cite the exact rules/durations clearly.\n"
-        "5. If an escalation ticket or reference ID is present, share it with the customer."
+        "5. If an escalation ticket or reference ID is present, share it with the customer.\n"
+        "6. Conclude your response immediately after your formal sign-off ('Best regards, Maya'). "
+        "Strictly DO NOT simulate customer replies (e.g. 'Thanks!'), future conversational turns, internal reasoning, or function call parameters."
+    )
+
+    user_prompt = (
+        f"Customer Inquired: \"{last_human_msg}\"\n\n"
+        f"Findings from our internal departments:\n{context_text}"
     )
 
     llm = get_llm()
-    resp = await llm.ainvoke([SystemMessage(content=prompt)])
+    resp = await llm.ainvoke([
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_prompt)
+    ])
+
+    # Defensive truncation guardrail: strip any rogue simulated follow-up turns
+    content = resp.content if isinstance(resp.content, str) else str(resp.content)
+    for marker in ["\nThanks!", "\nThank you!", "\nCustomer:", "\nUser:", "\nHuman:", "\nassistant\n"]:
+        if marker in content:
+            content = content.split(marker)[0].strip()
+
+    resp.content = content
     return {"messages": [resp]}
 
 
